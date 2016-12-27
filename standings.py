@@ -14,7 +14,6 @@ def get_record(team):
 	losses = pandas.read_sql("select `Loser/tie` as Team, count(Week) as L from `nflgames2016` where `Loser/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
 	ties = pandas.read_sql("select count(Week) as T from `nflgames2016` where (`Winner/tie` =\""+str(team)+"\" or `Loser/tie` =\""+str(team)+"\") and PtsW = PtsL", con);
 	record = pandas.merge(wins, losses, how='left', on='Team');
-	#leftties = pandas.merge(record, ties, how='left', left_on='Team', right_on='TeamA');
 	record = record.join(ties);
 	return record;
 	
