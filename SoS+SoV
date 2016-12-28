@@ -1,0 +1,17 @@
+import pandas
+from sqlalchemy import create_engine
+#calculate SoS and SoV for each team, return, place in standings table
+
+def get_schedule(team):
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
+	beat = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
+	lost = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where `Loser/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
+	tied1 = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW = PtsL", con);
+  tied2 = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where  `Loser/tie` =\""+str(team)+"\" and PtsW = PtsL", con);
+  print (beat);
+  print (lost);
+  print (tied1);
+  print (tied2);
+  
+ get_schedule("Baltimore Ravens");
+ get_schedule("Arizona Cardinals");
