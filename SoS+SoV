@@ -10,7 +10,9 @@ def get_record(team):
 	record = pandas.merge(wins, losses, how='left', on='Team');
 	record = record.join(ties);
 	return record;
-	
+
+#get list of opponents, week played for each team
+#can I make this into a class with attributes which give full schedule and beaten opponents?
 def get_schedule(team):
 	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
 	beat = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
@@ -22,5 +24,28 @@ def get_schedule(team):
 	tied = tied1.append(tied2);
 	unplayed = unplayed1.append(unplayed2);
 	full = beat.append(lost.append(tied.append(unplayed))).sort_values(by="Week");
-  
-get_schedule("Baltimore Ravens");
+  	return full;
+	
+#get_schedule("Baltimore Ravens");
+
+#iterate over opponents, find record, add to cumulative SoS record
+def SoS(team):
+	opp_wins = 0;
+	opp_losses = 0;
+	opp_ties = 0;
+	opps = [];
+	sched = get_schedule(team);
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
+	opps = sched.iteritems("Opp")
+	for i in opps:
+		opp_win += pandas.read_sql("select W from `stand2016` where `Team` =\""+str(i)+"\", con);
+		opp_losses += pandas.read_sql("select L from `stand2016` where `Team` =\""+str(i)+"\", con);
+		opp_ties += pandas.read_sql("select T from `stand2016` where `Team` =\""+str(i)+"\", con);
+		#frame = pandas.read_sql("select W, L, T from `stand2016`where `Team` =\""+str(i)+"\", con);
+		#opp_wins += frame["W"];
+		#opp_losses += frame["L"];
+		#opp_ties += frame["T"];
+		sched_str = (opp_wins+.5*opp_ties)/(opp_wins+opp_losses+opp_ties);
+	print (opp_wins+"-"+opp_losses+"-"+opp_ties);
+	print (sched_str);
+SoS("Baltimore Ravens");
