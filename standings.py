@@ -1,11 +1,15 @@
 import pandas
 from sqlalchemy import create_engine
-import os.path
 
 #Get list of team names; also includes conference, division, and abbreviation for future use
-teams = pandas.read_csv("c:/users/yoshi/downloads/teamlist.csv");
+teams = pandas.read_csv("C:/Users/Josh/Documents/Python Scripts/nfl/teamlist.csv");
 teams.index.name = "TeamID"
 Teams = teams["Team"]
+
+#send Team, Abr, Conference, and Division to a Team Table in SQL database
+#create "NFL" database separate from "nfl2016?" would require change to con definition, probably valuable
+def team_table(frame):
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016");
 
 #Search database for results by team, return wins, losses, tie; still need to improve format. Goal: Tm, W-L-T
 def get_record(team):
@@ -17,16 +21,17 @@ def get_record(team):
 	record = record.join(ties);
 	return record;
 	
-#Send team results to CSV for easy viewing	
-def make_standings(file, team):
-	if os.path.isfile(file) == True:
-		team.to_csv(loc, mode='a', index=False, header=False);
-	else: 
-		team.to_csv(loc, mode='w', index=False);
-name = input("filename?");
-loc = "c:/users/yoshi/downloads/"+str(name)+".csv";
-
-for i in Teams:
-	get_record(i);
-	#make_standings(loc, get_record(i));
-print (teams);
+#Send team results to CSV for easy viewing; used to check results easily, extraneous step to be removed (send directly to SQL)	
+def make_standings(team_list):
+	update = pandas.DataFrame(columns = ["Team", "W", "L", "T"]);    #create empty frame to hold updated record data
+	for i in team_list:
+		update = update.append(get_record(i), ignore_index=True);		#add each team's updated record data to the frame
+	update = update.sort_values(by=["W", "L"], ascending = [0, 1]); #sort the frame by W/L (team with most wins, then fewest losses)
+	return update;
+	
+#Send standings to SQL
+def update_sql(teams):
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016");
+	make_standings(teams).to_sql("stand2016", con, if_exists='replace', index=False);
+update_sql(Teams);	
+print (make_standings(Teams));
