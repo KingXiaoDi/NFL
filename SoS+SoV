@@ -24,7 +24,7 @@ def get_schedule(team):
 	tied = tied1.append(tied2);
 	unplayed = unplayed1.append(unplayed2);
 	full = beat.append(lost.append(tied.append(unplayed))).sort_values(by="Week");
-  	return full;
+	return full;
 	
 #get_schedule("Baltimore Ravens");
 
@@ -36,16 +36,15 @@ def SoS(team):
 	opps = [];
 	sched = get_schedule(team);
 	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
-	opps = sched.iteritems("Opp")
-	for i in opps:
-		opp_win += pandas.read_sql("select W from `stand2016` where `Team` =\""+str(i)+"\", con);
-		opp_losses += pandas.read_sql("select L from `stand2016` where `Team` =\""+str(i)+"\", con);
-		opp_ties += pandas.read_sql("select T from `stand2016` where `Team` =\""+str(i)+"\", con);
-		#frame = pandas.read_sql("select W, L, T from `stand2016`where `Team` =\""+str(i)+"\", con);
-		#opp_wins += frame["W"];
-		#opp_losses += frame["L"];
-		#opp_ties += frame["T"];
+	for i in sched["Opp"]:
+		#opp_wins += pandas.read_sql("select W from `stand2016` where `Team` =\""+str(i)+"\"", con);
+		#opp_losses += pandas.read_sql("select L from `stand2016` where `Team` =\""+str(i)+"\"", con);
+		#opp_ties += pandas.read_sql("select T from `stand2016` where `Team` =\""+str(i)+"\"", con);
+		frame = pandas.read_sql("select W, L, T from `stand2016`where `Team` =\""+str(i)+"\"", con);
+		opp_wins += frame["W"];
+		opp_losses += frame["L"];
+		opp_ties += frame["T"];
+		num = opp_wins + opp_ties;
 		sched_str = (opp_wins+.5*opp_ties)/(opp_wins+opp_losses+opp_ties);
-	print (opp_wins+"-"+opp_losses+"-"+opp_ties);
 	print (sched_str);
 SoS("Baltimore Ravens");
