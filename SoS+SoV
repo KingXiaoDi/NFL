@@ -1,17 +1,29 @@
+#calculate SoS and SoV for each team, return, place in standings table
 import pandas
 from sqlalchemy import create_engine
-#calculate SoS and SoV for each team, return, place in standings table
 
+def get_record(team):
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
+	wins = pandas.read_sql("select `Winner/tie` as Team, count(Week) as W from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
+	losses = pandas.read_sql("select `Loser/tie` as Team, count(Week) as L from `nflgames2016` where `Loser/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
+	ties = pandas.read_sql("select count(Week) as T from `nflgames2016` where (`Winner/tie` =\""+str(team)+"\" or `Loser/tie` =\""+str(team)+"\") and PtsW = PtsL", con);
+	record = pandas.merge(wins, losses, how='left', on='Team');
+	record = record.join(ties);
+	return record;
+	
 def get_schedule(team):
 	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
 	beat = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
 	lost = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where `Loser/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
 	tied1 = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW = PtsL", con);
-  tied2 = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where  `Loser/tie` =\""+str(team)+"\" and PtsW = PtsL", con);
-  print (beat);
-  print (lost);
-  print (tied1);
-  print (tied2);
+	tied2 = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where  `Loser/tie` =\""+str(team)+"\" and PtsW = PtsL", con);
+	unplayed1 = pandas.read_sql("select Week, `Winner/tie` as Opp from `nflgames2016` where  `Loser/tie` =\""+str(team)+"\" and PtsW IS NULL", con);
+	unplayed2 = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where  `Winner/tie` =\""+str(team)+"\" and PtsW IS NULL", con);
+	tied = tied1.append(tied2);
+	unplayed = unplayed1.append(unplayed2);
+	full = beat.append(lost.append(tied.append(unplayed))).sort_values(by="Week");
+	print (full);
   
- get_schedule("Baltimore Ravens");
- get_schedule("Arizona Cardinals");
+get_schedule("Baltimore Ravens");
+print ();
+get_schedule("Arizona Cardinals");
