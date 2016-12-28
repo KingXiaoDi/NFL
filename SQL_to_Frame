@@ -1,9 +1,0 @@
-import pandas
-from sqlalchemy import create_engine
-
-def sql_to_table():
-	db = input("Which database?");
-	table = input("Which table?");
-	con = create_engine('mysql+pymysql://root:@127.0.0.1/'+db);
-	frame = pandas.read_sql_table(table, con);
-	print (frame[:5]);
