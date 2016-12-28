@@ -22,8 +22,5 @@ def get_schedule(team):
 	tied = tied1.append(tied2);
 	unplayed = unplayed1.append(unplayed2);
 	full = beat.append(lost.append(tied.append(unplayed))).sort_values(by="Week");
-	print (full);
   
 get_schedule("Baltimore Ravens");
-print ();
-get_schedule("Arizona Cardinals");
