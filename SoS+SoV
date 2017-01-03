@@ -26,6 +26,11 @@ def get_schedule(team):
 	full = beat.append(lost.append(tied.append(unplayed))).sort_values(by="Week");
 	return full;
 	
+def get_wins(team):
+	con = create_engine("mysql+pymysql://root:@127.0.0.1/nfl2016"); 
+	beat = pandas.read_sql("select Week, `Loser/tie` as Opp from `nflgames2016` where `Winner/tie` =\""+str(team)+"\" and PtsW > PtsL", con);
+	return beat;
+	
 #get_schedule("Baltimore Ravens");
 
 #iterate over opponents, find record, add to cumulative SoS record
