@@ -1,0 +1,12 @@
+
+def calc_remaining(quarter, time):
+    left = 60 - (quarter * 15) + time;
+    return left;
+
+def calc_Q_T(minutes):
+   combined = [];
+   quarter = 1 + int((60 - minutes) / 15);
+   time = (minutes - (4 - quarter) * 15);
+   combined.append(quarter);
+   combined.append(time);
+   return combined;
