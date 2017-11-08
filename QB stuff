@@ -1,0 +1,52 @@
+import pandas
+
+def column_difference(dataframe1, dataframe2, mergeColumn):
+    cols = [mergeColumn]
+    for column in dataframe2.columns.difference(df.columns):
+        cols.append(column)
+    return cols
+
+def combine(dataframe1, dataframe2):
+    return dataframe1.merge(dataframe2[column_difference(dataframe1, dataframe2, 'Date')], how='inner', on='Date')
+    
+def morethan(dataframe, number):
+    return dataframe.loc[dataframe['Attempts'] >= number]
+
+def lessthan(dataframe, number):    
+    return dataframe.loc[dataframe['Attempts'] < number]
+
+def win(dataframe):
+    return dataframe.loc[dataframe['Win']]
+    
+def loss(dataframe):
+    return dataframe.loc[dataframe['Win'] == False]
+    
+file = "c:/users/josh/documents/brady.csv"
+file2 = "c:/users/josh/documents/patriots.csv"
+df = pandas.read_csv(file)
+df2 = pandas.read_csv(file2)
+df['Playoffs'].fillna(0, inplace=True)
+
+print(combine(df, df2)['Date'].count(), df['Date'].count(), df2['Date'].count())
+print (df['Date'].count()-df2['Date'].count())
+combine(df,df2).to_csv('c:/users/josh/documents/brady margin.csv')
+
+
+dict = {}
+attList = []
+start = 0
+max = df['Attempts'].max()
+while start <= max:
+    attList.append(start)
+    start += 5
+for i in range(0, len(attList)):
+    if i < len(attList)-1:
+        name = str(attList[i]) + "-" + str(attList[i+1])
+        data = morethan(lessthan(df, attList[i+1]), attList[i])
+        dict[name] = data
+    else:
+        name = str(attList[i]) + "+"
+        data = morethan(df, attList[i])
+        dict[name] = data
+        #print (win(data).count())
+        #print (loss(data).count())
