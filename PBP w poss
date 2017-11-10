@@ -1,0 +1,50 @@
+import pandas
+import numpy
+
+file = 'c:/users/josh/downloads/rav.csv' 
+drivefile = 'c:/users/josh/downloads/drives.csv' 
+
+def getDrives(file):
+    drives = pandas.read_csv(drivefile)
+    drives = drives.drop('#', axis=1)
+    drives["Time"] = pandas.to_datetime(drives["Time"], format= '%M:%S').dt.time
+    drives = drives.sort_values(["Quarter", "Time"], ascending=[True,False])
+    return drives
+
+def getPBP(file):
+    df = pandas.read_csv(file)
+    df = df[reduceColumns(df.columns.values)]
+    df['Poss'] = numpy.NaN
+    df["Time"] = pandas.to_datetime(df["Time"], format= '%M:%S').dt.time
+    return df
+
+def reduceColumns(columns):
+    col = []
+    for i in columns:
+        col.append(i)
+    for i in range(0,3):
+        col.pop()
+    return col
+
+def getPBPinQuarter(pbpDF, quarter):
+    return pbpDF.loc[pbpDF['Quarter'] == quarter]
+    
+def addPossToPBP(pbpDF, driveDF):
+    for i in range(1,5):
+        quarter =  (drivesByQuarter(drives, i))
+        quarterPBP = (getPBPinQuarter(pbpDF, i)) 
+        for row in quarter.iterrows():
+            pbpDF.loc[(pbpDF['Quarter'] == i) & (pbpDF['Time'] == (row[1]['Time'])),['Poss']] = row[1]['Poss']
+    return pbpDF
+
+def drivesByQuarter(df, quarter):
+    return df.loc[df['Quarter'] == quarter]
+    
+def playsByDown(df, down):
+    return df.loc[df['Down'] == down]
+
+drives = getDrives(drivefile)
+df = getPBP(file)
+
+fullDF = addPossToPBP(getPBP(file), getDrives(drivefile)).ffill()
+fullDF.to_csv('c:/users/josh/documents/tester.csv')
