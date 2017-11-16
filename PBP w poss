@@ -15,6 +15,7 @@ def getPBP(file):
     df = pandas.read_csv(file)
     df = df[reduceColumns(df.columns.values)]
     df['Poss'] = numpy.NaN
+    df['Yard Number'] = 0
     df["Time"] = pandas.to_datetime(df["Time"], format= '%M:%S').dt.time
     return df
 
@@ -37,14 +38,117 @@ def addPossToPBP(pbpDF, driveDF):
             pbpDF.loc[(pbpDF['Quarter'] == i) & (pbpDF['Time'] == (row[1]['Time'])),['Poss']] = row[1]['Poss']
     return pbpDF
 
+def convertLoc(df):
+    for row in df.iterrows():
+        if (row[1]["Location"] == "50"):
+                df.loc[row[0], "Yard Number"] = 50
+        elif (row[1]['Poss'] == "Ravens"):
+            if(("RAV") in row[1]["Location"]):
+                df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
+            else:
+                df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
+        else:
+            if(("RAV") in row[1]["Location"]):
+                df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
+            else:
+                df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
+
 def drivesByQuarter(df, quarter):
     return df.loc[df['Quarter'] == quarter]
-    
+   
 def playsByDown(df, down):
     return df.loc[df['Down'] == down]
+
+def getOppPlays(df):
+    return df.loc[df['Poss'] != "Ravens"]
+
+def getPlays(df):
+    return df.loc[df['Poss'] == "Ravens"]
+    
+def within(df, margin):
+    return df.loc[abs(df['BAL']-df['CIN']) <= margin]
+    
+def larger(df, margin):
+    return df.loc[abs(df['BAL']-df['CIN']) > margin]
+    
+def noPlay(df):
+    noPen = []
+    count = 0
+    for row in df['Detail'].str.contains("no play"):
+        if row == False:
+            noPen.append(count)
+        count += 1
+    for row in df.iterrows():
+        if row[0] in noPen:
+            print (row[1])
+
+def  
+			
+def getRuns(df):
+	runLocations = ['left end', 'right end', 'left tackle', 'right tackle', 'left guard', 'right guard', 'middle']
+	runColumns = []
+	for each in (df.columns.values):
+		runColumns.append(each)
+	newColumns = ["Player", "Direction", "Hole", "Gain"]
+	for each in newColumns:
+		runColumns.append(each)
+	run = pandas.DataFrame(columns=runColumns)
+	for each in runLocations:
+		noPass = (df[df["Detail"].astype(str).str.contains('pass')==False])
+		runPiece = noPass[noPass["Detail"].astype(str).str.contains(each)]
+		for each in newColumns:
+			runPiece[each] = ""
+			#fix when you can read pandas docs
+		run = run.append(runPiece)
+	for each in run.iterrows():
+		detailSplit= (each[1]["Detail"]).split(" ")
+		gain = (detailSplit.index("for"))
+		if "middle" in detailSplit:
+			run.loc[each[0], "Direction"] = detailSplit[2]
+			run.loc[each[0], "Hole"] = "center"
+		else:
+			run.loc[each[0], "Direction"] = detailSplit[2]
+			run.loc[each[0], "Hole"] = detailSplit[3]
+#		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
+		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
+		run.loc[each[0], "Player"] = detailSplit[0] + " " + detailSplit[1]
+	print (run)
+				
+			
+def sorter(df):
+	td = (df[df["Detail"].astype(str).str.contains('touchdown')])
+	pat = (df[df["Detail"].astype(str).str.contains('extra point')])
+	fg = (df[df["Detail"].astype(str).str.contains('field goal')])
+	ko = (df[df["Detail"].astype(str).str.contains('kicks off')])
+	onside = (df[df["Detail"].astype(str).str.contains('kicks onside')])
+	punt = (df[df["Detail"].astype(str).str.contains('punt')])
+	sack = (df[df["Detail"].astype(str).str.contains('sack')])
+	penalty = (df[df["Detail"].astype(str).str.contains('no play')])
+	timeout = (df[df["Detail"].astype(str).str.contains('Timeout')])
+	clock = (df[df["Detail"].astype(str).str.contains('spike')])
+	#check how this is works
+	throws = (df[df["Detail"].astype(str).str.contains('pass')])
 
 drives = getDrives(drivefile)
 df = getPBP(file)
 
 fullDF = addPossToPBP(getPBP(file), getDrives(drivefile)).ffill()
-fullDF.to_csv('c:/users/josh/documents/tester.csv')
+convertLoc(fullDF)
+oppFirstDownPlays = (playsByDown(getOppPlays(fullDF),1))
+firstDownPlays = (playsByDown(getPlays(fullDF),1))
+#oppFirstDownPlays.to_csv('c:/users/josh/documents/opp1st.csv')
+#firstDownPlays.to_csv('c:/users/josh/documents/1st.csv')
+#getPBPinQuarter(fullDF,2).to_csv('c:/users/josh/documents/tester.csv')
+
+getRuns(getPBPinQuarter(fullDF,2))
+
+#sorter(getPBPinQuarter(fullDF, 2))
+#sorter(fullDF)
+'''
+Sort out kneels, spikes
+Sort out kickoffs, safety punts, timeouts, PATs
+Sort out accepted penalties (df.str.contains("no play"))
+Sort out punts, field goals
+Sort out passes, sacks
+Runs remain (check)
+'''
