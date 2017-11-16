@@ -1,33 +1,50 @@
 import pandas as pd
 import math
 
-def sorter(file):
-	df = pd.read_csv(file)
-	td = (df[df["Play"].astype(str).str.contains('touchdown')])
-	pat = (df[df["Play"].astype(str).str.contains('extra point')])
-	fg = (df[df["Play"].astype(str).str.contains('field goal')])
-	ko = (df[df["Play"].astype(str).str.contains('kicks off')])
-	onside = (df[df["Play"].astype(str).str.contains('kicks onside')])
-	punt = (df[df["Play"].astype(str).str.contains('punt')])
-	sack = (df[df["Play"].astype(str).str.contains('sack')])
-	penalty = (df[df["Play"].astype(str).str.contains('Penalty')])
-	timeout = (df[df["Play"].astype(str).str.contains('Timeout')])
-	clock = (df[df["Play"].astype(str).str.contains('spike')])
-	throws = (df[df["Play"].astype(str).str.contains('pass')])
-	runs = (df[df["Play"].astype(str).str.contains('Penalty')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('pass')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('kicks off')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('sack')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('punt')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('extra point')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('Timeout')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('field goal')==False])
-	runs = (runs[runs["Play"].astype(str).str.contains('spike')==False])
-	number = len(pat.index)+len(fg.index)+len(ko.index)+len(onside.index)+len(punt.index)+len(sack.index)+len(penalty.index)+len(timeout.index)+len(clock.index)+len(throws.index)
-	print (len(df.index), number , len(runs.index))
-	col = ["Quarter", "Time Rem.", "Down", "Yards", "Location", "Poss", "Gun", "Form", "Play", "Away", "Home"]
-	print (td[col])
-#sorter("c:/users/yoshi/documents/python_scripts/nfl/pxp/games/201612040rav.csv")
+def getRuns(df):
+	runLocations = ['left end', 'right end', 'left tackle', 'right tackle', 'left guard', 'right guard', 'middle']
+	runColumns = []
+	for each in (df.columns.values):
+		runColumns.append(each)
+	newColumns = ["Player", "Direction", "Hole", "Gain"]
+	for each in newColumns:
+		runColumns.append(each)
+	run = pandas.DataFrame(columns=runColumns)
+	for each in runLocations:
+		noPass = (df[df["Detail"].astype(str).str.contains('pass')==False])
+		runPiece = noPass[noPass["Detail"].astype(str).str.contains(each)]
+		for each in newColumns:
+			runPiece[each] = ""
+			#fix when you can read pandas docs
+		run = run.append(runPiece)
+	for each in run.iterrows():
+		detailSplit= (each[1]["Detail"]).split(" ")
+		gain = (detailSplit.index("for"))
+		if "middle" in detailSplit:
+			run.loc[each[0], "Direction"] = detailSplit[2]
+			run.loc[each[0], "Hole"] = "center"
+		else:
+			run.loc[each[0], "Direction"] = detailSplit[2]
+			run.loc[each[0], "Hole"] = detailSplit[3]
+#		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
+		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
+		run.loc[each[0], "Player"] = detailSplit[0] + " " + detailSplit[1]
+	print (run)
+				
+			
+def sorter(df):
+	td = (df[df["Detail"].astype(str).str.contains('touchdown')])
+	pat = (df[df["Detail"].astype(str).str.contains('extra point')])
+	fg = (df[df["Detail"].astype(str).str.contains('field goal')])
+	ko = (df[df["Detail"].astype(str).str.contains('kicks off')])
+	onside = (df[df["Detail"].astype(str).str.contains('kicks onside')])
+	punt = (df[df["Detail"].astype(str).str.contains('punt')])
+	sack = (df[df["Detail"].astype(str).str.contains('sack')])
+	penalty = (df[df["Detail"].astype(str).str.contains('no play')])
+	timeout = (df[df["Detail"].astype(str).str.contains('Timeout')])
+	clock = (df[df["Detail"].astype(str).str.contains('spike')])
+	#check how this is works
+	throws = (df[df["Detail"].astype(str).str.contains('pass')])
 
 def yard_adj(file):
 	df = pd.read_csv(file)
