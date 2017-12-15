@@ -1,0 +1,104 @@
+from tkinter import filedialog
+import pandas
+import numpy
+
+class Division:
+	def __init__(self, conf, div):
+		self.conf = conf
+		self.div = div
+	
+	def add_team(self, team):
+		self.teams = []
+		self.teams.append(team)
+	
+	def display_teams(self):
+		print (self.teams)
+		
+class Team:
+	def __init__(self, name):
+		self.name = name
+	
+	def detail(self):
+		print ("{} had a bye in week {}. The following week they played the {}.".format(self.name, self.bye, self.postbyeTeam))
+	
+	def add_bye(self, bye):
+		self.bye = bye
+	
+	def team_after_bye(self, postbyeTeam):
+		self.postbyeTeam = postbyeTeam
+
+def find_missing_int(list):
+	for i in range(0,len(list)-1):
+		if list[0] != 1:
+			return 1
+		elif (list[i+1] - list[i]) > 1:
+			return (list[i]+1)
+			
+def get_schedule(df, team):
+	return df.loc[df['Team1'] == team].append(df.loc[df['Team2'] == team]).sort_values(['Week'])
+	
+def find_bye(df):
+	weeksPlayed = df['Week'].tolist()
+	bye = find_missing_int(weeksPlayed)
+	return bye
+
+def get_postbye_team(df, team):
+	bye = team.bye
+	postByeGame = (df.loc[df['Week'] == bye+1])
+	team1 = (postByeGame['Team1'].values)
+	team2 = (postByeGame['Team2'].values)
+	if team1 == team.name:
+		postByeOpp = team2[0]
+	elif team2 == team.name:
+		postByeOpp = team1[0]
+	team.team_after_bye(postByeOpp)
+'''	if team1 == str(team.name):
+		print (team2)
+	elif team2 == str(team.name):
+		print (team1)'''
+
+def do_all(standings, gameFrame, folder, year, verbose=False, dev=False):
+	teams = []
+	games = []
+	for row in standings.iterrows():
+		teams.append(Team(row[1]['Name']))
+	col = ['Team', 'Bye', 'Opp']
+	byeDF = pandas.DataFrame(columns = col)
+		
+	for team in teams:
+		teamSched = get_schedule(gameFrame, str(team.name))
+		bye = find_bye(teamSched)
+		team.add_bye(bye)
+		get_postbye_team(teamSched, team)
+		addDF = pandas.DataFrame([[team.name, team.bye, team.postbyeTeam]], columns = col)
+		byeDF = byeDF.append(addDF)
+
+	byeDF.sort_values('Opp', inplace=True)
+	if dev:
+		print (byeDF)
+	postBye = (byeDF['Opp'].unique())
+
+	noByeOpp = []
+	for team in teams:
+		if team.name not in postBye:
+			noByeOpp.append(team.name)
+	if dev:
+		print (noByeOpp)
+	for team in noByeOpp:
+		noByeOppDF = pandas.DataFrame([[numpy.NaN, numpy.NaN, team]], columns = col)
+		byeDF = byeDF.append(noByeOppDF)
+	if verbose:
+		print (byeDF)
+	byeDF.to_csv(saveFolder+'/bye '+str(year)+'.csv', index=False)
+	#byeDF.to_csv('C:/users/josh/documents/python/nfl/2017bye.csv', index=False)
+
+for i in [2014, 2015, 2016]:
+	saveFolder = filedialog.askdirectory(title="Choose where to save the data")
+	standings = pandas.read_csv('c:/users/josh/documents/python/nfl/stand'+str(i)+'.csv')
+	gameFrame = pandas.read_csv('c:/users/josh/documents/python/nfl/sched'+str(i)+'.csv')
+	gameFrame['At'].replace(numpy.NaN, 'vs', inplace=True)
+	do_all(standings, gameFrame, saveFolder, i)
+	
+'''standings = pandas.read_csv('c:/users/josh/documents/python/nfl/2017 playoffs/current2.csv').sort_values(['Conf', 'Div', 'W', 'L'], ascending = [True, True, False, True])
+gameFrame = pandas.read_csv('c:/users/josh/documents/python/nfl/2017 playoffs/full.csv')
+gameFrame['At'].replace(numpy.NaN, 'vs', inplace=True)'''
