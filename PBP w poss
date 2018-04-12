@@ -1,91 +1,104 @@
+from tkinter import filedialog
 import pandas
 import numpy
 
-file = 'c:/users/josh/downloads/rav.csv' 
-drivefile = 'c:/users/josh/downloads/drives.csv' 
+def getFiles():
+	fileLocation = filedialog.askdirectory(initialdir='c:/users/josh/documents/Python/nfl/ravens2017/' , title='Select starting folder')
+	#file = 'c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/ind.csv' 
+	#file = filedialog.askopenfilename(initialdir='c:/users/josh/documents/Python/nfl/ravens2017/' , title='Select PBP')
+	#drivefile = 'c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/drives.csv' 
+	#drivefile = filedialog.askopenfilename(initialdir='c:/users/josh/documents/Python/nfl/ravens2017/' , title='Select Drive file')
+
+	file = fileLocation+'/pbp.csv'
+	drivefile = fileLocation+'/drives.csv'
+	return fileLocation, file, drivefile
+
+def saveDF(fileLocation, name, df):
+	df.to_csv(fileLocation+'/'+name+'.csv')
+	
+def resetIndex(df):
+	return df.reset_index().drop('index', axis=1)
 
 def getDrives(file):
-    drives = pandas.read_csv(drivefile)
-    drives = drives.drop('#', axis=1)
-    drives["Time"] = pandas.to_datetime(drives["Time"], format= '%M:%S').dt.time
-    drives = drives.sort_values(["Quarter", "Time"], ascending=[True,False])
-    return drives
+	drives = pandas.read_csv(drivefile)
+	drives = drives.drop('#', axis=1)
+	drives["Time"] = pandas.to_datetime(drives["Time"], format= '%M:%S').dt.time
+	drives = drives.sort_values(["Quarter", "Time"], ascending=[True,False])
+	return drives
 
 def getPBP(file):
-    df = pandas.read_csv(file)
-    df = df[reduceColumns(df.columns.values)]
-    df['Poss'] = numpy.NaN
-    df['Yard Number'] = 0
-    df["Time"] = pandas.to_datetime(df["Time"], format= '%M:%S').dt.time
-    return df
+	df = pandas.read_csv(file)
+	df = df[reduceColumns(df.columns.values)]
+	df['Poss'] = numpy.NaN
+	df['Yard Number'] = 0
+	df["Time"] = pandas.to_datetime(df["Time"], format= '%M:%S').dt.time
+	return df
 
 def reduceColumns(columns):
-    col = []
-    for i in columns:
-        col.append(i)
-    for i in range(0,3):
-        col.pop()
-    return col
+	col = []
+	for i in columns:
+		col.append(i)
+	for i in range(0,3):
+		col.pop()
+	return col
 
 def getPBPinQuarter(pbpDF, quarter):
-    return pbpDF.loc[pbpDF['Quarter'] == quarter]
-    
+	return pbpDF.loc[pbpDF['Quarter'] == quarter]
+	
 def addPossToPBP(pbpDF, driveDF):
-    for i in range(1,5):
-        quarter =  (drivesByQuarter(drives, i))
-        quarterPBP = (getPBPinQuarter(pbpDF, i)) 
-        for row in quarter.iterrows():
-            pbpDF.loc[(pbpDF['Quarter'] == i) & (pbpDF['Time'] == (row[1]['Time'])),['Poss']] = row[1]['Poss']
-    return pbpDF
+	for i in range(1,5):
+		quarter =  (drivesByQuarter(drives, i))
+		quarterPBP = (getPBPinQuarter(pbpDF, i)) 
+		for row in quarter.iterrows():
+			pbpDF.loc[(pbpDF['Quarter'] == i) & (pbpDF['Time'] == (row[1]['Time'])),['Poss']] = row[1]['Poss']
+	return pbpDF
 
 def convertLoc(df):
-    for row in df.iterrows():
-        if (row[1]["Location"] == "50"):
-                df.loc[row[0], "Yard Number"] = 50
-        elif (row[1]['Poss'] == "Ravens"):
-            if(("RAV") in row[1]["Location"]):
-                df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
-            else:
-                df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
-        else:
-            if(("RAV") in row[1]["Location"]):
-                df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
-            else:
-                df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
+	for row in df.iterrows():
+		if (row[1]["Location"] == "50"):
+				df.loc[row[0], "Yard Number"] = 50
+		elif (row[1]['Poss'] == "Ravens"):
+			if(("RAV") in row[1]["Location"]):
+				df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
+			else:
+				df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
+		else:
+			if(("RAV") in row[1]["Location"]):
+				df.loc[row[0], "Yard Number"] = (100-int(row[1]["Location"][4:]))
+			else:
+				df.loc[row[0], "Yard Number"] = row[1]["Location"][4:]
 
 def drivesByQuarter(df, quarter):
-    return df.loc[df['Quarter'] == quarter]
+	return df.loc[df['Quarter'] == quarter]
    
 def playsByDown(df, down):
-    return df.loc[df['Down'] == down]
+	return df.loc[df['Down'] == down]
 
 def getOppPlays(df):
-    return df.loc[df['Poss'] != "Ravens"]
+	return df.loc[df['Poss'] != "Ravens"]
 
 def getPlays(df):
-    return df.loc[df['Poss'] == "Ravens"]
-    
+	return df.loc[df['Poss'] == "Ravens"]
+	
 def within(df, margin):
-    return df.loc[abs(df['BAL']-df['CIN']) <= margin]
-    
+	return df.loc[abs(df['BAL']-df['CIN']) <= margin]
+	
 def larger(df, margin):
-    return df.loc[abs(df['BAL']-df['CIN']) > margin]
-    
+	return df.loc[abs(df['BAL']-df['CIN']) > margin]
+	
 def noPlay(df):
-    noPen = []
-    count = 0
-    for row in df['Detail'].str.contains("no play"):
-        if row == False:
-            noPen.append(count)
-        count += 1
-    for row in df.iterrows():
-        if row[0] in noPen:
-            print (row[1])
-
-def  
+	noPen = []
+	count = 0
+	for row in df['Detail'].str.contains("no play"):
+		if row == False:
+			noPen.append(count)
+		count += 1
+	for row in df.iterrows():
+		if row[0] in noPen:
+			print (row[1])
 			
 def getRuns(df):
-	runLocations = ['left end', 'right end', 'left tackle', 'right tackle', 'left guard', 'right guard', 'middle']
+	runLocations = ['left end', 'right end', 'left tackle', 'right tackle', 'left guard', 'right guard', 'middle', 'kneel']
 	runColumns = []
 	for each in (df.columns.values):
 		runColumns.append(each)
@@ -109,41 +122,63 @@ def getRuns(df):
 		else:
 			run.loc[each[0], "Direction"] = detailSplit[2]
 			run.loc[each[0], "Hole"] = detailSplit[3]
-#		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
 		run.loc[each[0], "Gain"] = (detailSplit[gain+1])
 		run.loc[each[0], "Player"] = detailSplit[0] + " " + detailSplit[1]
-	print (run)
-				
-			
+	return resetIndex(run)
+							
 def sorter(df):
 	td = (df[df["Detail"].astype(str).str.contains('touchdown')])
+	td.to_csv('c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/TDs.csv')
 	pat = (df[df["Detail"].astype(str).str.contains('extra point')])
+	pat.to_csv('c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/pat.csv')
 	fg = (df[df["Detail"].astype(str).str.contains('field goal')])
-	ko = (df[df["Detail"].astype(str).str.contains('kicks off')])
-	onside = (df[df["Detail"].astype(str).str.contains('kicks onside')])
+	fg.to_csv('c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/fg.csv')
 	punt = (df[df["Detail"].astype(str).str.contains('punt')])
 	sack = (df[df["Detail"].astype(str).str.contains('sack')])
 	penalty = (df[df["Detail"].astype(str).str.contains('no play')])
-	timeout = (df[df["Detail"].astype(str).str.contains('Timeout')])
 	clock = (df[df["Detail"].astype(str).str.contains('spike')])
-	#check how this is works
-	throws = (df[df["Detail"].astype(str).str.contains('pass')])
+	
+def getTOs(df):
+	timeout = (df[df["Detail"].astype(str).str.contains('Timeout')])
+	split = df[df["Detail"].astype(str).str.contains('Timeout')==False]
+	return split
+	
+def getKOs(df):
+	kickoff = (df[df["Detail"].astype(str).str.contains('kicks off|kicks onside')])
+	split = df[df["Detail"].astype(str).str.contains('kicks off|kicks onside')==False]
+	return split
+	
+def getThrows(df):
+	throws = (df[df["Detail"].astype(str).str.contains('pass|sack')])
+	#throws.to_csv('c:/users/josh/documents/Python/nfl/ravens2017/12.23.18 Colts/throws.csv')
+	return throws
 
-drives = getDrives(drivefile)
-df = getPBP(file)
+def getCounts(df):
+	throws = getThrows(df)
+	runs = getRuns(df)
+	print ("Team had {} first down plays in this game.\nOn first down, team called {} runs and {} passes.".format(df['Time'].count(), runs['Time'].count(), throws['Time'].count()))
 
-fullDF = addPossToPBP(getPBP(file), getDrives(drivefile)).ffill()
-convertLoc(fullDF)
-oppFirstDownPlays = (playsByDown(getOppPlays(fullDF),1))
-firstDownPlays = (playsByDown(getPlays(fullDF),1))
-#oppFirstDownPlays.to_csv('c:/users/josh/documents/opp1st.csv')
-#firstDownPlays.to_csv('c:/users/josh/documents/1st.csv')
-#getPBPinQuarter(fullDF,2).to_csv('c:/users/josh/documents/tester.csv')
-
-getRuns(getPBPinQuarter(fullDF,2))
-
-#sorter(getPBPinQuarter(fullDF, 2))
-#sorter(fullDF)
+if __name__ == "__main__":
+	fileLocation, file, drivefile = getFiles()
+	drives = getDrives(drivefile)
+	df = getPBP(file)
+	fullDF = addPossToPBP(getPBP(file), getDrives(drivefile)).ffill()
+	convertLoc(fullDF)
+	saveDF(fileLocation, 'adjusted pbp', fullDF)
+	DFnoTOs = getTOs(fullDF)
+	DFnoKOs = getKOs(DFnoTOs)
+	firstDownPlays = resetIndex((playsByDown(getPlays(DFnoKOs),1)))
+	saveDF(fileLocation, 'Ravens 1st down plays', firstDownPlays)
+	getCounts(firstDownPlays)
+''' 	oppFirstDownPlays = (playsByDown(getOppPlays(fullDF),1))
+	thirdDownOpp = playsByDown(getOppPlays(fullDF),3)
+	thirdDownOpp.to_csv('C:/users/josh/documents/python/nfl/3rddownsteel.csv')
+	print (playsByDown(getOppPlays(fullDF),3)['ToGo'])
+	#print (oppFirstDownPlays)
+	#oppFirstDownPlays.to_csv('c:/users/josh/documents/opp1st.csv')
+	#getPBPinQuarter(fullDF,2).to_csv('c:/users/josh/documents/tester.csv')
+	#getRuns(getPBPinQuarter(fullDF,2))
+	#sorter(getPBPinQuarter(fullDF, 2))'''
 '''
 Sort out kneels, spikes
 Sort out kickoffs, safety punts, timeouts, PATs
